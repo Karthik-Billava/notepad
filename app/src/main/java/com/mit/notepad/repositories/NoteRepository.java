@@ -10,6 +10,7 @@ import com.mit.notepad.alarms.AlarmScheduler;
 import com.mit.notepad.database.NotepadDatabase;
 import com.mit.notepad.models.Note;
 import com.mit.notepad.models.Tag;
+import com.mit.notepad.models.Todo;
 import com.mit.notepad.utils.Constants;
 import com.mit.notepad.utils.TextStats;
 
@@ -89,7 +90,15 @@ public class NoteRepository {
     }
 
     public int countByType(String type) {
+        if (Constants.NOTE_TYPE_TODO.equals(type)) {
+            return scalar("SELECT (SELECT COUNT(*) FROM notes WHERE note_type=?) + "
+                    + "(SELECT COUNT(*) FROM todos WHERE note_id IS NULL)", new String[]{type});
+        }
         return scalar("SELECT COUNT(*) FROM notes WHERE note_type=?", new String[]{type});
+    }
+
+    public int countStandalone() {
+        return scalar("SELECT COUNT(*) FROM todos WHERE note_id IS NULL", null);
     }
 
     public int countFavorites() {
@@ -109,6 +118,25 @@ public class NoteRepository {
     // ------------------------------------------------------------------ reads
 
     public Note get(long id) {
+        if (id < 0) {
+            long todoId = -id;
+            Todo t = new TodoRepository(context, helper).get(todoId);
+            if (t == null) return null;
+            Note n = new Note();
+            n.id = id;
+            n.title = t.title;
+            n.content = t.description == null ? "" : t.description;
+            n.formatting = "[]";
+            n.noteType = Constants.NOTE_TYPE_TODO;
+            n.createdAt = t.createdAt;
+            n.updatedAt = t.completedAt > 0 ? t.completedAt : t.createdAt;
+            n.wordCount = TextStats.wordCount(n.content);
+            n.charCount = TextStats.charCount(n.content);
+            n.favorite = false;
+            n.pinned = false;
+            n.tags = t.tags;
+            return n;
+        }
         try (Cursor c = helper.getReadableDatabase().rawQuery(
                 "SELECT * FROM notes WHERE id=?", new String[]{String.valueOf(id)})) {
             if (!c.moveToFirst()) return null;
@@ -197,6 +225,81 @@ public class NoteRepository {
             List<Tag> t = tagMap.get(n.id);
             n.tags = t == null ? new ArrayList<Tag>() : t;
         }
+
+        if (!q.favoritesOnly && !q.pinnedOnly && (q.noteType == null || Constants.NOTE_TYPE_TODO.equals(q.noteType))) {
+            List<String> todoArgs = new ArrayList<>();
+            StringBuilder todoSql = new StringBuilder("SELECT t.* FROM todos t WHERE t.note_id IS NULL");
+            if (!kw.isEmpty()) {
+                todoSql.append(" AND (t.title LIKE ? ESCAPE '\\' OR t.description LIKE ? ESCAPE '\\')");
+                todoArgs.add(like);
+                todoArgs.add(like);
+            }
+            if (q.tagIds != null && !q.tagIds.isEmpty()) {
+                todoSql.append(" AND EXISTS (SELECT 1 FROM todo_tags tt WHERE tt.todo_id=t.id AND tt.tag_id IN (");
+                for (int i = 0; i < q.tagIds.size(); i++) {
+                    todoSql.append(i == 0 ? "?" : ",?");
+                    todoArgs.add(String.valueOf(q.tagIds.get(i)));
+                }
+                todoSql.append("))");
+            }
+            if (q.todoStatus != null) {
+                todoSql.append(" AND t.status=?");
+                todoArgs.add(q.todoStatus);
+            }
+            if (q.dueDayStart > 0) {
+                todoSql.append(" AND t.due_at BETWEEN ? AND ?");
+                todoArgs.add(String.valueOf(q.dueDayStart));
+                todoArgs.add(String.valueOf(q.dueDayEnd));
+            }
+            if (q.dayStart > 0) {
+                todoSql.append(" AND t.created_at BETWEEN ? AND ?");
+                todoArgs.add(String.valueOf(q.dayStart));
+                todoArgs.add(String.valueOf(q.dueDayEnd > 0 ? q.dueDayEnd : q.dayEnd));
+            }
+
+            Map<Long, List<Tag>> todoTagMap = tags.todoTagMap();
+            try (Cursor c = helper.getReadableDatabase().rawQuery(todoSql.toString(), todoArgs.toArray(new String[0]))) {
+                while (c.moveToNext()) {
+                    long todoId = c.getLong(c.getColumnIndexOrThrow("id"));
+                    Note n = new Note();
+                    n.id = -todoId;
+                    n.title = c.getString(c.getColumnIndexOrThrow("title"));
+                    n.content = c.getString(c.getColumnIndexOrThrow("description"));
+                    n.formatting = "[]";
+                    n.noteType = Constants.NOTE_TYPE_TODO;
+                    n.createdAt = c.getLong(c.getColumnIndexOrThrow("created_at"));
+                    int doneIdx = c.getColumnIndexOrThrow("completed_at");
+                    long doneAt = c.isNull(doneIdx) ? 0 : c.getLong(doneIdx);
+                    n.updatedAt = doneAt > 0 ? doneAt : n.createdAt;
+                    n.wordCount = TextStats.wordCount(n.content);
+                    n.charCount = TextStats.charCount(n.content);
+                    n.favorite = false;
+                    n.pinned = false;
+                    List<Tag> tList = todoTagMap.get(todoId);
+                    n.tags = tList == null ? new ArrayList<Tag>() : tList;
+                    result.add(n);
+                }
+            }
+
+            java.util.Collections.sort(result, (n1, n2) -> {
+                if (q.pinnedFirst && n1.pinned != n2.pinned) {
+                    return n1.pinned ? -1 : 1;
+                }
+                if (SORT_OLDEST.equals(q.sort)) {
+                    return Long.compare(n1.createdAt, n2.createdAt);
+                } else if (SORT_TITLE.equals(q.sort)) {
+                    return n1.title.compareToIgnoreCase(n2.title);
+                } else if (SORT_RELEVANCE.equals(q.sort) && !kw.isEmpty()) {
+                    boolean m1 = n1.title.toLowerCase(Locale.getDefault()).contains(kw.toLowerCase(Locale.getDefault()));
+                    boolean m2 = n2.title.toLowerCase(Locale.getDefault()).contains(kw.toLowerCase(Locale.getDefault()));
+                    if (m1 != m2) return m1 ? -1 : 1;
+                    return Long.compare(n2.updatedAt, n1.updatedAt);
+                } else {
+                    return Long.compare(n2.updatedAt, n1.updatedAt);
+                }
+            });
+        }
+
         return result;
     }
 

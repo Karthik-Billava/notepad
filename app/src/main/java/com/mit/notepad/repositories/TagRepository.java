@@ -43,12 +43,16 @@ public class TagRepository {
         return t;
     }
 
+    private static final String TAG_SELECT_SQL =
+            "SELECT t.*, ((SELECT COUNT(*) FROM note_tags nt WHERE nt.tag_id=t.id) + "
+                    + "(SELECT COUNT(*) FROM todo_tags tt JOIN todos td ON td.id=tt.todo_id "
+                    + "WHERE tt.tag_id=t.id AND td.note_id IS NULL)) AS note_count FROM tags t ";
+
     /** All tags (alphabetical) with the number of notes that use them. */
     public List<Tag> getAll() {
         List<Tag> list = new ArrayList<>();
         try (Cursor c = helper.getReadableDatabase().rawQuery(
-                "SELECT t.*, (SELECT COUNT(*) FROM note_tags nt WHERE nt.tag_id=t.id) AS note_count "
-                        + "FROM tags t ORDER BY t.name COLLATE NOCASE", null)) {
+                TAG_SELECT_SQL + "ORDER BY t.name COLLATE NOCASE", null)) {
             while (c.moveToNext()) list.add(map(c));
         }
         return list;
@@ -58,8 +62,7 @@ public class TagRepository {
     public List<Tag> getRecent(int limit) {
         List<Tag> list = new ArrayList<>();
         try (Cursor c = helper.getReadableDatabase().rawQuery(
-                "SELECT t.*, (SELECT COUNT(*) FROM note_tags nt WHERE nt.tag_id=t.id) AS note_count "
-                        + "FROM tags t WHERE t.last_used_at>0 ORDER BY t.last_used_at DESC LIMIT ?",
+                TAG_SELECT_SQL + "WHERE t.last_used_at>0 ORDER BY t.last_used_at DESC LIMIT ?",
                 new String[]{String.valueOf(limit)})) {
             while (c.moveToNext()) list.add(map(c));
         }
@@ -68,8 +71,7 @@ public class TagRepository {
 
     public Tag get(long id) {
         try (Cursor c = helper.getReadableDatabase().rawQuery(
-                "SELECT t.*, (SELECT COUNT(*) FROM note_tags nt WHERE nt.tag_id=t.id) AS note_count "
-                        + "FROM tags t WHERE t.id=?", new String[]{String.valueOf(id)})) {
+                TAG_SELECT_SQL + "WHERE t.id=?", new String[]{String.valueOf(id)})) {
             return c.moveToFirst() ? map(c) : null;
         }
     }

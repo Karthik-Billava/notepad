@@ -108,14 +108,15 @@ public class NotesFragment extends Fragment implements NoteAdapter.Listener {
         adapter.setHighlight(keyword);
         adapter.setItems(notes);
 
-        int total = repo.count();
+        int total = repo.count() + repo.countStandalone();
         int todos = repo.countByType(Constants.NOTE_TYPE_TODO);
+        int plainNotes = repo.countByType(Constants.NOTE_TYPE_NOTE);
         int favs = repo.countFavorites();
         b.tvCountNotes.setText(getString(R.string.count_notes, total));
         b.tvCountTodo.setText(getString(R.string.count_todo, todos));
         b.tvCountFav.setText(getString(R.string.count_favourites, favs));
         b.chipAll.setText(getString(R.string.chip_all_count, total));
-        b.chipNotes.setText(getString(R.string.chip_notes_count, total - todos));
+        b.chipNotes.setText(getString(R.string.chip_notes_count, plainNotes));
         b.chipTodo.setText(getString(R.string.chip_todo_count, todos));
         b.chipFav.setText(getString(R.string.chip_fav_count, favs));
 

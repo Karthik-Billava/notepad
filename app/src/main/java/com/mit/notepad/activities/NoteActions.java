@@ -20,16 +20,26 @@ public final class NoteActions {
     private NoteActions() { }
 
     public static void open(Activity a, Note n) {
-        a.startActivity(new Intent(a, NoteViewActivity.class).putExtra(Constants.EXTRA_NOTE_ID, n.id));
+        if (n.id < 0) {
+            a.startActivity(new Intent(a, TodoEditorActivity.class).putExtra(Constants.EXTRA_TODO_ID, -n.id));
+        } else {
+            a.startActivity(new Intent(a, NoteViewActivity.class).putExtra(Constants.EXTRA_NOTE_ID, n.id));
+        }
     }
 
     public static void edit(Activity a, Note n) {
-        a.startActivity(new Intent(a, NoteEditorActivity.class).putExtra(Constants.EXTRA_NOTE_ID, n.id));
+        if (n.id < 0) {
+            a.startActivity(new Intent(a, TodoEditorActivity.class).putExtra(Constants.EXTRA_TODO_ID, -n.id));
+        } else {
+            a.startActivity(new Intent(a, NoteEditorActivity.class).putExtra(Constants.EXTRA_NOTE_ID, n.id));
+        }
     }
 
     public static void toggleFavorite(Activity a, Note n, Runnable refresh) {
-        new NoteRepository(a).setFavorite(n.id, !n.favorite);
-        refresh.run();
+        if (n.id > 0) {
+            new NoteRepository(a).setFavorite(n.id, !n.favorite);
+            refresh.run();
+        }
     }
 
     /** Opens the editor for a new note unless the 50-note limit has been reached. */
@@ -52,7 +62,11 @@ public final class NoteActions {
     public static void confirmDelete(Activity a, Note n, Runnable afterDelete) {
         UiUtils.confirm(a, R.string.delete_note_title,
                 a.getString(R.string.delete_note_message, n.title), R.string.delete, () -> {
-                    new NoteRepository(a).delete(n.id);
+                    if (n.id < 0) {
+                        new com.mit.notepad.repositories.TodoRepository(a).delete(-n.id);
+                    } else {
+                        new NoteRepository(a).delete(n.id);
+                    }
                     UiUtils.toast(a, R.string.note_deleted);
                     afterDelete.run();
                 });
@@ -62,9 +76,15 @@ public final class NoteActions {
         PopupMenu pm = new PopupMenu(a, anchor);
         pm.inflate(R.menu.menu_note_item);
         Menu m = pm.getMenu();
-        m.findItem(R.id.action_pin).setTitle(n.pinned ? R.string.unpin : R.string.pin);
-        m.findItem(R.id.action_favourite).setTitle(n.favorite ? R.string.remove_favourite : R.string.add_favourite);
-        m.findItem(R.id.action_todo).setTitle(n.isTodo() ? R.string.mark_as_note : R.string.mark_as_todo);
+        if (n.id < 0) {
+            m.findItem(R.id.action_pin).setVisible(false);
+            m.findItem(R.id.action_favourite).setVisible(false);
+            m.findItem(R.id.action_todo).setVisible(false);
+        } else {
+            m.findItem(R.id.action_pin).setTitle(n.pinned ? R.string.unpin : R.string.pin);
+            m.findItem(R.id.action_favourite).setTitle(n.favorite ? R.string.remove_favourite : R.string.add_favourite);
+            m.findItem(R.id.action_todo).setTitle(n.isTodo() ? R.string.mark_as_note : R.string.mark_as_todo);
+        }
         NoteRepository repo = new NoteRepository(a);
         pm.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
@@ -73,23 +93,39 @@ public final class NoteActions {
             } else if (id == R.id.action_edit) {
                 edit(a, n);
             } else if (id == R.id.action_pin) {
-                repo.setPinned(n.id, !n.pinned);
-                refresh.run();
+                if (n.id > 0) {
+                    repo.setPinned(n.id, !n.pinned);
+                    refresh.run();
+                }
             } else if (id == R.id.action_favourite) {
-                repo.setFavorite(n.id, !n.favorite);
-                refresh.run();
+                if (n.id > 0) {
+                    repo.setFavorite(n.id, !n.favorite);
+                    refresh.run();
+                }
             } else if (id == R.id.action_tags) {
                 List<Long> ids = new ArrayList<>();
                 for (com.mit.notepad.models.Tag t : n.tags) ids.add(t.id);
                 TagDialogs.pickTags(a, ids, newIds -> {
-                    repo.setNoteTags(n.id, newIds);
+                    if (n.id < 0) {
+                        new com.mit.notepad.repositories.TodoRepository(a).setTodoTags(-n.id, newIds);
+                    } else {
+                        repo.setNoteTags(n.id, newIds);
+                    }
                     refresh.run();
                 });
             } else if (id == R.id.action_todo) {
-                repo.setNoteType(n.id, n.isTodo() ? Constants.NOTE_TYPE_NOTE : Constants.NOTE_TYPE_TODO);
-                refresh.run();
+                if (n.id > 0) {
+                    repo.setNoteType(n.id, n.isTodo() ? Constants.NOTE_TYPE_NOTE : Constants.NOTE_TYPE_TODO);
+                    refresh.run();
+                }
             } else if (id == R.id.action_alarm) {
-                a.startActivity(new Intent(a, AlarmActivity.class).putExtra(Constants.EXTRA_NOTE_ID, n.id));
+                Intent intent = new Intent(a, AlarmActivity.class);
+                if (n.id < 0) {
+                    intent.putExtra(Constants.EXTRA_TODO_ID, -n.id);
+                } else {
+                    intent.putExtra(Constants.EXTRA_NOTE_ID, n.id);
+                }
+                a.startActivity(intent);
             } else if (id == R.id.action_delete) {
                 confirmDelete(a, n, refresh);
             }

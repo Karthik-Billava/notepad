@@ -282,4 +282,39 @@ public class RepositoryInstrumentedTest {
         second.close();
         context.deleteDatabase(name);
     }
+
+    @Test
+    public void standaloneTasksListedInTagAndNotesCount() throws Exception {
+        long tagId = tags.create("WorkTag", "#F5B731", "work");
+
+        // 1. Create a standalone todo assigned to tag
+        Todo standalone = new Todo();
+        standalone.title = "Buy supplies";
+        standalone.description = "Office supplies";
+        todos.save(standalone, Collections.singletonList(tagId));
+
+        // 2. Create a note of type TODO assigned to tag
+        Note noteTodo = new Note();
+        noteTodo.title = "Project milestone";
+        noteTodo.noteType = Constants.NOTE_TYPE_TODO;
+        notes.save(noteTodo, Collections.singletonList(tagId));
+
+        // Verify tag noteCount includes both standalone todo and note-based todo
+        assertEquals(2, tags.get(tagId).noteCount);
+
+        // Verify total todo count in NoteRepository includes both
+        assertEquals(2, notes.countByType(Constants.NOTE_TYPE_TODO));
+
+        // Verify querying notes by tagId returns both items
+        NoteRepository.NoteQuery tagQuery = new NoteRepository.NoteQuery();
+        tagQuery.tagIds.add(tagId);
+        List<Note> tagResults = notes.query(tagQuery);
+        assertEquals(2, tagResults.size());
+
+        // Verify querying notes by noteType TODO returns both items
+        NoteRepository.NoteQuery todoQuery = new NoteRepository.NoteQuery();
+        todoQuery.noteType = Constants.NOTE_TYPE_TODO;
+        List<Note> todoResults = notes.query(todoQuery);
+        assertEquals(2, todoResults.size());
+    }
 }

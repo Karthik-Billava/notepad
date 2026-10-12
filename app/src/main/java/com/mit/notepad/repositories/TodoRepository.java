@@ -221,6 +221,17 @@ public class TodoRepository {
         }
     }
 
+    public void setTodoTags(long todoId, List<Long> tagIds) {
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.beginTransaction();
+        try {
+            TagRepository.replaceTodoTags(db, todoId, tagIds);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     /** Deletes a standalone task together with its reminder. */
     public void delete(long id) {
         Todo t = get(id);
