@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools">
+    <item android:id="@+id/filter_all" android:title="@string/filter_all_tasks" />
+    <item android:id="@+id/filter_overdue" android:title="@string/filter_overdue" />
+    <item android:id="@+id/filter_reminder" android:title="@string/filter_with_reminder" />
+    <item android:id="@+id/filter_tag" android:title="@string/filter_by_tag" />
+</menu>

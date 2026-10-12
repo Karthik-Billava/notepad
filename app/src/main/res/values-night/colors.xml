@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="np_primary">#8E7CFF</color>
+    <color name="np_primary_dark">#6B5AE0</color>
+    <color name="np_primary_light">#2E2A55</color>
+    <color name="np_on_primary">#14122B</color>
+    <color name="np_background">#12111C</color>
+    <color name="np_surface">#1D1B2B</color>
+    <color name="np_surface_variant">#262338</color>
+    <color name="np_text_primary">#F2F0FF</color>
+    <color name="np_text_secondary">#A9A6C8</color>
+    <color name="np_divider">#34314D</color>
+    <color name="np_danger">#FF6B81</color>
+    <color name="np_danger_light">#3E1F27</color>
+    <color name="np_splash_blob">#2A2650</color>
+</resources>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools">
+    <item android:id="@+id/action_open" android:title="@string/open" />
+    <item android:id="@+id/action_edit" android:title="@string/edit" />
+    <item android:id="@+id/action_pin" android:title="@string/pin" />
+    <item android:id="@+id/action_favourite" android:title="@string/add_favourite" />
+    <item android:id="@+id/action_tags" android:title="@string/edit_tags" />
+    <item android:id="@+id/action_todo" android:title="@string/mark_as_todo" />
+    <item android:id="@+id/action_alarm" android:title="@string/set_alarm" />
+    <item android:id="@+id/action_delete" android:title="@string/delete" />
+</menu>

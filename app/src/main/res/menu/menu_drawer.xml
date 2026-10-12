@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools">
+    <item android:id="@+id/drawer_search" android:icon="@drawable/ic_search" android:title="@string/search" />
+    <item android:id="@+id/drawer_alarms" android:icon="@drawable/ic_alarm" android:title="@string/alarms" />
+    <item android:id="@+id/drawer_settings" android:icon="@drawable/ic_palette" android:title="@string/settings" />
+    <item android:id="@+id/drawer_exit" android:icon="@drawable/ic_exit" android:title="@string/exit_app" />
+</menu>

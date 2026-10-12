@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="np_card_radius">16dp</dimen>
+    <dimen name="np_screen_padding">16dp</dimen>
+    <dimen name="np_item_gap">6dp</dimen>
+    <dimen name="np_icon_tile">44dp</dimen>
+    <dimen name="np_fab_margin">16dp</dimen>
+    <dimen name="np_item_padding_default">12dp</dimen>
+    <dimen name="np_item_padding_compact">8dp</dimen>
+    <dimen name="np_item_padding_detailed">16dp</dimen>
+</resources>

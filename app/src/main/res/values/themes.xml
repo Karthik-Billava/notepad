@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Notepad" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/np_primary</item>
+        <item name="colorPrimaryVariant">@color/np_primary_dark</item>
+        <item name="colorOnPrimary">@color/np_on_primary</item>
+        <item name="colorSecondary">@color/np_primary</item>
+        <item name="colorSecondaryVariant">@color/np_primary_dark</item>
+        <item name="colorOnSecondary">@color/np_on_primary</item>
+        <item name="colorSurface">@color/np_surface</item>
+        <item name="colorOnSurface">@color/np_text_primary</item>
+        <item name="colorOnBackground">@color/np_text_primary</item>
+        <item name="colorError">@color/np_danger</item>
+        <item name="android:colorBackground">@color/np_background</item>
+        <item name="android:windowBackground">@color/np_background</item>
+        <item name="android:statusBarColor">@color/np_background</item>
+        <item name="android:navigationBarColor">@color/np_surface</item>
+        <item name="android:textColorPrimary">@color/np_text_primary</item>
+        <item name="android:textColorSecondary">@color/np_text_secondary</item>
+        <item name="android:textColorHint">@color/np_text_secondary</item>
+    </style>
+
+    <!-- "Lavender" background theme (always rendered in light mode) -->
+    <style name="Theme.Notepad.Lavender" parent="Theme.Notepad">
+        <item name="android:colorBackground">@color/np_background_lavender</item>
+        <item name="android:windowBackground">@color/np_background_lavender</item>
+        <item name="android:statusBarColor">@color/np_background_lavender</item>
+    </style>
+</resources>
