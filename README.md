@@ -1,110 +1,222 @@
 # Notepad – Your Notes, Your Tasks
 
-Native Android notes application with to-do management, alarms, tags, favourites and search.
-Academic project for **Mobile Applications Development (MCA 5162)**, Manipal Institute of Technology, Manipal.
+A native Android notes and task management application developed as part of the Mobile Applications Development (MCA 5162) course at Manipal Institute of Technology, Manipal.
 
-Java · XML layouts · SQLite (`SQLiteOpenHelper`) · RecyclerView · AlarmManager / BroadcastReceiver · Android notifications · no network, no Firebase, no Kotlin.
+Notepad combines note-taking, to-do management, reminders, tags, favourites, and search in a single offline application. All data is stored locally using SQLite, while Android's native alarm and notification APIs handle reminders.
 
-> **Build status (honest note):** this project was written without access to an Android SDK, so it has **not been compiled
-> or run on a device/emulator**. The pure-Java logic (word/character counts, repeat calculation) was compiled and tested
-> on a plain JVM, and all XML/resource/ID/binding references were cross-checked by script. Expect to fix a few small
-> compile errors on first build in Android Studio; please report/fix them and run the test suites listed below.
+## Features
 
-## Setup
-1. Install **Android Studio** (Hedgehog or newer, JDK 17).
-2. `File ▸ Open…` and choose this folder. Let Gradle sync (it downloads Gradle 8.2 and Android Gradle Plugin 8.2.2).
-   The Gradle wrapper *jar/scripts* are not included; Android Studio creates them, or run `gradle wrapper` once.
-3. Run the **app** configuration on an emulator/device with Android 7.0 (API 24) or newer. `compileSdk/targetSdk = 34`.
-4. Tests: `./gradlew test` (JVM unit tests) and `./gradlew connectedAndroidTest` (SQLite/alarm tests on a device/emulator).
+- **Notes:** Create, edit, view, delete, pin, and favourite notes.
+- **Rich Text:** Support for bold, italic, underline, hyperlinks, and bullet points.
+- **Word and Character Count:** Live text statistics while editing notes.
+- **To-Do Management:** Create standalone tasks or convert notes into tasks, track completion, and manage due dates.
+- **Reminders:** Schedule one-time or repeating alarms for notes and tasks.
+- **Search and Filters:** Search note titles and content, with filters for dates, time, tags, favourites, task status, and due dates.
+- **Tags:** Create, rename, recolour, and organise notes and tasks using reusable tags.
+- **Favourites:** Keep important notes accessible and pin them to the top of the list.
+- **Notification History:** View previous notifications, manage read status, and navigate to associated notes or tasks.
+- **Customisation:** Choose between system, light, dark, and lavender themes, with additional list-view options.
+- **Local Storage:** All application data is stored on the device. No account, backend, Firebase, or internet connection is required.
+
+## Tech Stack
+
+| Component | Technology |
+|---|---|
+| Programming language | Java |
+| UI development | XML layouts |
+| Lists | RecyclerView |
+| Database | SQLite |
+| Database helper | SQLiteOpenHelper |
+| Alarm scheduling | AlarmManager |
+| Background event handling | BroadcastReceiver |
+| Notifications | Android Notification APIs |
+| Build system | Gradle |
+| Minimum Android version | Android 7.0 (API 24) |
+| Compile SDK / Target SDK | 34 |
+
+## Getting Started
+
+### Prerequisites
+
+- Android Studio Hedgehog or newer
+- JDK 17
+- Android SDK Platform 34
+- Android emulator or physical Android device running Android 7.0 or newer
+
+### Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone <repository-url>
+   ```
+
+2. Open Android Studio and select **File → Open**.
+3. Choose the cloned project directory.
+4. Allow Gradle to sync and download the required dependencies.
+5. Make sure Android SDK Platform 34 is installed.
+6. Select an emulator or connect an Android device with USB debugging enabled.
+7. Build and run the `app` configuration.
+
+The project uses Gradle 8.2 and Android Gradle Plugin 8.2.2. If the Gradle wrapper is not included in the repository, generate it using a compatible Gradle installation:
+
+```bash
+gradle wrapper --gradle-version 8.2
+```
+
+On Windows, use `gradlew.bat` to run Gradle commands. On Linux or macOS, use `./gradlew`.
 
 ## Permissions
-| Permission | Why |
+
+The application uses the following permissions for reminders and notifications:
+
+| Permission | Purpose |
 |---|---|
-| `POST_NOTIFICATIONS` (Android 13+) | Show reminder/alarm notifications. Requested once at first launch; denial is handled (history is still recorded, an explanation + shortcut to settings is shown). |
-| `SCHEDULE_EXACT_ALARM` (Android 12+) | Exact alarm delivery. If not granted, alarms fall back to `setAndAllowWhileIdle()` and the app **says so** (banner on the Alarm screen, hint on the To-Do form, row in Settings). Exact timing is never promised: battery optimisation, Doze and Do-Not-Disturb can still delay delivery. |
-| `RECEIVE_BOOT_COMPLETED` | Re-register alarms after a reboot / app update. Alarms missed while the device was off are delivered on boot; repeating alarms move to their next occurrence. |
+| `POST_NOTIFICATIONS` | Allows notifications on Android 13 and newer. |
+| `SCHEDULE_EXACT_ALARM` | Provides access to exact alarm scheduling where permitted by Android. |
+| `RECEIVE_BOOT_COMPLETED` | Allows eligible alarms to be restored after a device reboot. |
 
-## Using the app
-* **Notes tab** – summary, live search, filters (All/Notes/To-Do/Favourites), sort, pinned notes first, FAB to add a note (max **50** notes; a dialog explains the limit).
-* **Add/Edit note** – title, rich text (bold, italic, underline, bullets, links), live word/character counts, favourite switch, to-do switch, alarm, tags, unsaved-changes warning.
-* **View note** – full note, counts, created/modified times, note ID, quick actions (favourite, to-do, alarm, tags), delete with confirmation.
-* **Search** (drawer or header icon) – keyword in title + content, date, time (hour), type, to-do status, tags, due date, favourites, sorting, clear search.
-* **To-Do tab** – Pending/Completed tabs, overdue highlight, search, filters (overdue/with reminder/tag), complete/reopen, edit, delete.
-* **Alarms** (drawer, note, task) – set/edit/cancel/delete, enable switch, repeat (none/daily/weekly/every N days), active alarm list.
-* **Tags tab** – coloured tag cards with note counts, create/rename/recolour/delete, open a tag to see its notes, recent tags, search.
-* **Favourites tab** – starred notes, filters, search, pin/unpin.
-* **Notifications tab** – history with All/To-Do/Alarm filters, read/unread, mark all read, clear all, tap to open the note/task if it still exists.
-* **Settings** (drawer) – theme (system/light/dark/lavender), list-view theme (default/compact/detailed), notification preferences, exact-alarm status, privacy, about, exit with confirmation.
+Notification permission is requested at first launch on supported Android versions. If permission is denied, the app retains its local reminder history and explains how to enable notifications through system settings.
 
-## Architecture
-```
+When exact-alarm access is unavailable, the application falls back to an inexact alarm where supported. Reminder delivery is not guaranteed at the exact scheduled time because Android may delay alarms due to Doze mode, battery optimisation, or other system restrictions.
+
+Eligible alarms are re-registered after a reboot or app update. Repeating alarms advance to their next scheduled occurrence rather than replaying every missed reminder.
+
+## Project Structure
+
+The application follows a modular structure that separates UI components, database operations, business logic, and alarm handling.
+
+```text
 app/src/main/java/com/mit/notepad/
-  activities/     Splash, Main (bottom nav + drawer), NoteEditor, NoteView, Search, TodoEditor, Alarm, TagNotes, Settings,
-                  BaseActivity (theme), NoteActions / TagDialogs / RepeatDialogs (shared UI helpers)
-  fragments/      Notes, Todo, Tags, Favourites, Notifications (the five bottom-navigation tabs)
-  adapters/       RecyclerView adapters (Note, Todo, Tag, Alarm, Notification)
-  models/         Note, Todo, Tag, Alarm, AppNotification (plain data classes)
-  database/       NotepadDatabase (schema, foreign keys, versioning/migrations)
-  repositories/   Note, Todo, Tag, Alarm, Notification, Settings repositories (all SQL + business rules)
-  alarms/         AlarmScheduler (AlarmManager), AlarmReceiver, BootReceiver, AlarmDelivery
-  notifications/  NotificationHelper (channels + system notifications)
-  utils/          Constants, TextStats, Repeat, DateTimeUtils, ThemeUtils, RichText, TagStyle, Validator, UiUtils
+├── activities/
+│   ├── SplashActivity
+│   ├── MainActivity
+│   ├── NoteEditorActivity
+│   ├── NoteViewActivity
+│   ├── SearchActivity
+│   ├── TodoEditorActivity
+│   ├── AlarmActivity
+│   ├── TagNotesActivity
+│   ├── SettingsActivity
+│   └── Shared UI helpers and BaseActivity
+├── fragments/
+│   ├── NotesFragment
+│   ├── TodoFragment
+│   ├── TagsFragment
+│   ├── FavouritesFragment
+│   └── NotificationsFragment
+├── adapters/
+│   └── RecyclerView adapters
+├── models/
+│   ├── Note
+│   ├── Todo
+│   ├── Tag
+│   ├── Alarm
+│   └── AppNotification
+├── database/
+│   └── NotepadDatabase
+├── repositories/
+│   └── Data and settings repositories
+├── alarms/
+│   ├── AlarmScheduler
+│   ├── AlarmReceiver
+│   ├── BootReceiver
+│   └── AlarmDelivery
+├── notifications/
+│   └── NotificationHelper
+└── utils/
+    └── Shared utility classes
 ```
-UI code never writes SQL; repositories never touch views. Lists reload in `onResume`, so favourites/tags/pins stay in sync everywhere.
-Database calls run on the main thread: with at most 50 notes the queries are tiny (documented simplification).
 
-### Database (SQLite, version 1)
-Tables: `notes`, `todos`, `tags`, `note_tags`, `todo_tags`, `alarms`, `notifications`, `settings`.
-Foreign keys are enforced (`onConfigure`), indexes exist for sort/search/relationship columns, related writes use transactions,
-and `onUpgrade` is a versioned migration skeleton (the database is never recreated at start-up).
+Activities and fragments handle the UI and user interactions. RecyclerView adapters display lists, while repositories handle database queries and application-level data operations. Alarm scheduling and notification delivery are managed separately from the UI.
 
-Deviations from the proposed schema (refinements):
-* `todos.due_date` + `due_time` → single `due_at` epoch-millis column (simpler sorting/comparison). Same for `alarms.scheduled_at`.
-* Extra columns: `notes.formatting` (rich-text spans as JSON), `tags.icon`, `tags.last_used_at`, `todos.repeat_interval`, `todos.completed_at`.
-* Extra table `todo_tags` so standalone tasks can have tags. `alarms` has `note_id` **or** `todo_id` (CHECK constraint, unique per owner).
-* Deletion rules: note → cascades to its linked task, alarm and tag links; task → cascades to alarm and tag links; tag → only links are removed;
-  notification history is kept (`note_id/todo_id` set to NULL, so a tap says the item no longer exists).
-* The 50-note limit applies to **notes** only; standalone tasks, tags and notification history are not limited.
+Lists reload in `onResume()` to keep changes synchronised across screens.
 
-### Definitions / decisions
-* **Word count** = whitespace-separated tokens of the trimmed text. **Character count** = Unicode code points including spaces and line breaks (`TextStats`, used everywhere, computed in `NoteRepository.save`).
-* A **to-do note** (note with the to-do switch) has a linked task row; standalone tasks come from the To-Do tab. Linked tasks are edited as notes; their due date/reminder comes from the note's alarm.
-* Each note/task has at most one alarm; its database id is the `PendingIntent` request code (unique), so editing never duplicates a reminder.
-* **Time search** matches notes created/modified in the chosen **hour**; **date search** matches the chosen day.
-* Search uses parameterised queries; `LIKE` wildcards typed by the user are escaped.
-* Completing a task cancels its alarm; reopening restores it (repeating alarms advance to the next future time).
-* Text formatting (bold/italic/underline/links) is stored as JSON spans next to plain text; bullets are plain "• " text.
+## Database Design
 
-## Requirement mapping (summary)
-| Synopsis / UI screen | Implementation |
+The application uses SQLite through `SQLiteOpenHelper`. The current database schema is version 1.
+
+| Table | Description |
 |---|---|
-| 1 Splash | `SplashActivity` |
-| 2 Notes list | `NotesFragment`, `NoteAdapter` |
-| 3 Add/Edit note | `NoteEditorActivity` |
-| 4 View note | `NoteViewActivity` |
-| 5 Search | `SearchActivity`, `NoteRepository.query` |
-| 6 To-Do | `TodoFragment`, `TodoAdapter`, `TodoRepository` |
-| 7 Add To-Do | `TodoEditorActivity` |
-| 8 Alarm | `AlarmActivity`, `AlarmRepository`, `AlarmScheduler`, `AlarmReceiver`, `BootReceiver` |
-| 9 Tags | `TagsFragment`, `TagNotesActivity`, `TagDialogs`, `TagRepository` |
-| 10 Favourites | `FavouritesFragment` |
-| 11 Notifications | `NotificationsFragment`, `NotificationHelper`, `NotificationRepository` |
-| 12 Settings | `SettingsActivity`, `SettingsRepository` (SQLite `settings` table) |
+| `notes` | Note content, timestamps, formatting, favourites, and pinned state. |
+| `todos` | Standalone tasks and tasks linked to notes. |
+| `tags` | Tag names, colours, icons, and usage information. |
+| `note_tags` | Relationships between notes and tags. |
+| `todo_tags` | Relationships between tasks and tags. |
+| `alarms` | Reminder schedules associated with notes or tasks. |
+| `notifications` | Local notification history. |
+| `settings` | Persistent application preferences. |
 
-## Known limitations / deviations from the UI reference
-* Not built or run (see top). Layout fidelity to the PDF screens is approximate (colours, cards, chips, icons follow the design; pixel match is not claimed).
-* The editor's **image** button from the design is omitted (images are outside the synopsis); **Backup & Restore** in Settings is omitted (not required, would otherwise be a non-functional control).
-* Settings has no bottom navigation bar (it opens from the drawer with a back arrow). Alarm management (screen 8) is reached from the drawer, a note, or a task.
-* Alarm tags (shown in the reference) are not implemented; tags belong to notes and tasks.
-* Favourites/pins apply to notes (not standalone tasks).
-* The reminder for a task whose reminder already fired is switched off until edited (one-off alarms only fire once).
-* Back-up of data (`allowBackup=false`) is disabled for privacy.
+### Database Implementation
 
-## Suggested manual test script
-1. Create 50 notes → the 51st shows the limit dialog. Delete one → creating works again.
-2. Add notes with bold/italic/links, check counts, edit, rotate the screen, press Back with unsaved changes.
-3. Set an alarm 1–2 minutes ahead on a note and on a standalone task; lock the screen; confirm notification, history entry, tap opens the item.
-4. Revoke notification permission → alarm still recorded in history; banner/Settings explain it.
-5. Complete a task with a reminder (alarm cancelled), reopen it (alarm restored), delete the note (alarm cancelled).
-6. Reboot the device with a future alarm → it still fires.
-7. Settings: change theme and list view, restart the app, confirm persistence; try Exit.
+- Foreign-key enforcement is enabled through `onConfigure()`.
+- Indexes support common search, sorting, and relationship queries.
+- Related database operations use transactions where necessary.
+- Database upgrades use a versioned migration structure rather than recreating the database on startup.
+- Deleting a note removes its linked task, alarm, and tag relationships.
+- Deleting a task removes its alarm and tag relationships.
+- Deleting a tag removes its relationships without deleting associated notes or tasks.
+- Notification history is preserved when a note or task is deleted by setting the associated foreign key to `NULL`.
+- Each note or task can have at most one alarm, enforced through database constraints.
+
+### Design Decisions
+
+Due dates and alarm schedules are stored as epoch-millisecond values to simplify sorting and date comparisons. Rich-text formatting is stored as JSON spans alongside the original plain text. Additional fields support tag icons, recently used tags, task repetition, and completion timestamps.
+
+The separate `todo_tags` table allows standalone tasks to use tags independently of notes.
+
+The current implementation performs database operations on the main thread. This keeps the implementation straightforward for the project's limited scope, but background execution would be preferable if the application were expanded.
+
+## Text Processing
+
+Text statistics are handled by the `TextStats` utility.
+
+- **Word count:** Counts whitespace-separated tokens after trimming the text.
+- **Character count:** Counts Unicode code points, including spaces and line breaks.
+
+Counts are recalculated when a note is saved through `NoteRepository.save()`.
+
+Rich-text formatting is stored separately from plain text as JSON spans. Bullet points are represented as ordinary text prefixed with `• `.
+
+## Testing
+
+The project includes JVM unit tests and Android instrumentation tests.
+
+Run JVM tests using:
+
+```bash
+./gradlew test
+```
+
+Run instrumentation tests on a connected device or emulator using:
+
+```bash
+./gradlew connectedAndroidTest
+```
+
+Testing should cover note creation and editing, text formatting, search filters, task completion, alarm scheduling, notification permissions, alarm restoration after reboot, database relationships, and settings persistence.
+
+**Build status:** The complete Android application has not yet been compiled or tested on an emulator or physical device. Standalone Java utilities have been compiled and tested on a regular JVM, and scripts have been used to check XML resources, IDs, and binding references. The Android build and runtime behaviour still need verification in Android Studio.
+
+## Known Limitations
+
+- The UI follows the supplied design reference, but exact pixel-level matching has not been verified.
+- The image-insertion feature from the original design is not implemented.
+- Backup and restore functionality is not included.
+- Alarm management is accessible through the navigation drawer, notes, and tasks.
+- Tags cannot be assigned directly to alarms.
+- Favourites and pins apply to notes, not standalone tasks.
+- A one-time task reminder is switched off after it fires; another reminder must be scheduled if needed.
+- Database operations run on the main thread.
+- App data backup is disabled using `allowBackup=false`.
+
+## Future Improvements
+
+Potential improvements include moving database operations to a background executor, expanding automated test coverage, improving accessibility, refining the UI, and adding backup and restore functionality.
+
+## Academic Information
+
+**Course:** Mobile Applications Development (MCA 5162)  
+**Institution:** Manipal Institute of Technology, Manipal
+
+This project explores native Android application development, SQLite persistence, modular application architecture, task management, and system-level alarm and notification handling using Java and XML.
