@@ -220,3 +220,12 @@ Potential improvements include moving database operations to a background execut
 **Institution:** Manipal Institute of Technology, Manipal
 
 This project explores native Android application development, SQLite persistence, modular application architecture, task management, and system-level alarm and notification handling using Java and XML.
+
+## Download
+
+Download the latest APK from
+[GitHub Releases](https://github.com/karthik-billava/notepad/releases).
+
+Download the APK, install it on your Android
+device, and allow installation from this source
+if prompted.
