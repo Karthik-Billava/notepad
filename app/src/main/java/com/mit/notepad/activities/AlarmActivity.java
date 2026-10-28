@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.PopupMenu;
 
@@ -317,6 +318,8 @@ public class AlarmActivity extends BaseActivity implements AlarmAdapter.Listener
             if (targetNoteId > 0) alarms.saveForNote(targetNoteId, alarmAt, enabled, repeat, interval);
             else alarms.saveForTodo(targetTodoId, alarmAt, enabled, repeat, interval);
         } catch (RuntimeException e) {
+            Log.e("AlarmActivity", "Failed to persist alarm (noteId=" + targetNoteId
+                    + ", todoId=" + targetTodoId + ", at=" + alarmAt + ")", e);
             UiUtils.toast(this, R.string.error_save_failed);
             return;
         }
