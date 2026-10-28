@@ -1,6 +1,9 @@
 package com.mit.notepad.alarms;
 
 import android.content.Context;
+import android.content.Intent;
+
+import androidx.core.content.ContextCompat;
 
 import com.mit.notepad.R;
 import com.mit.notepad.database.NotepadDatabase;
@@ -65,6 +68,15 @@ public final class AlarmDelivery {
 
         long historyId = new NotificationRepository(helper).add(title, message, category,
                 alarm.noteId, alarm.todoId);
+        Intent ringing = new Intent(context, AlarmRingingService.class)
+                .setAction(AlarmRingingService.ACTION_START)
+                .putExtra(AlarmRingingService.EXTRA_TITLE, title)
+                .putExtra(AlarmRingingService.EXTRA_MESSAGE, message);
+        try {
+            ContextCompat.startForegroundService(context, ringing);
+        } catch (RuntimeException ignored) {
+            // Keep the normal notification/history fallback if the OS blocks service startup.
+        }
         if (allowed) {
             NotificationHelper.show(context, (int) historyId, category, title, message,
                     alarm.noteId, alarm.todoId, historyId);
