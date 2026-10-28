@@ -2,8 +2,11 @@ package com.mit.notepad.database;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import com.mit.notepad.utils.TextStats;
 
 /**
  * SQLite schema owner. The database is created once and upgraded in place; it is never wiped on start.
@@ -16,9 +19,10 @@ import android.database.sqlite.SQLiteOpenHelper;
  */
 public class NotepadDatabase extends SQLiteOpenHelper {
     public static final String DB_NAME = "notepad.db";
-    public static final int DB_VERSION = 1;
+    public static final int DB_VERSION = 2;
 
     private static NotepadDatabase instance;
+    private final boolean seedSampleData;
 
     public static synchronized NotepadDatabase getInstance(Context context) {
         if (instance == null) {
@@ -30,6 +34,7 @@ public class NotepadDatabase extends SQLiteOpenHelper {
     /** Public so tests can create isolated (or in-memory, name == null) databases. */
     public NotepadDatabase(Context context, String name) {
         super(context, name, null, DB_VERSION);
+        seedSampleData = DB_NAME.equals(name);
     }
 
     @Override
@@ -125,6 +130,9 @@ public class NotepadDatabase extends SQLiteOpenHelper {
             db.execSQL("CREATE INDEX idx_notifications_cat ON notifications(category, is_read)");
 
             seedDefaultTags(db);
+            if (seedSampleData) {
+                seedSampleRecords(db);
+            }
             db.setTransactionSuccessful();
         } finally {
             db.endTransaction();
@@ -149,6 +157,83 @@ public class NotepadDatabase extends SQLiteOpenHelper {
         }
     }
 
+    /** Adds starter notes and tasks to the real app database, never to isolated test databases. */
+    private void seedSampleRecords(SQLiteDatabase db) {
+        long now = System.currentTimeMillis();
+
+        long ideasTagId = findTagId(db, "Ideas");
+        long studyTagId = findTagId(db, "Study");
+        long personalTagId = findTagId(db, "Personal");
+
+        long welcomeNoteId = insertSampleNote(db, "Welcome to Notepad",
+                "Save ideas, plans, and reminders here. Edit or delete this sample whenever you like.",
+                now, false, false);
+        long studyNoteId = insertSampleNote(db, "Study plan",
+                "Choose a topic, write down the key points, and review them before class.",
+                now, false, false);
+        long weeklyNoteId = insertSampleNote(db, "Ideas for the week",
+                "Capture small ideas here so they are easy to find later.",
+                now, true, true);
+
+        linkNoteToTag(db, welcomeNoteId, ideasTagId);
+        linkNoteToTag(db, studyNoteId, studyTagId);
+        linkNoteToTag(db, weeklyNoteId, ideasTagId);
+
+        long reviewTodoId = insertSampleTodo(db, "Review your notes",
+                "Organise the ideas you want to keep.", now);
+        long weeklyTodoId = insertSampleTodo(db, "Set a weekly goal",
+                "Choose one task to finish this week.", now);
+        linkTodoToTag(db, reviewTodoId, studyTagId);
+        linkTodoToTag(db, weeklyTodoId, personalTagId);
+    }
+
+    private long insertSampleNote(SQLiteDatabase db, String title, String content, long now,
+                                  boolean favorite, boolean pinned) {
+        ContentValues values = new ContentValues();
+        values.put("title", title);
+        values.put("content", content);
+        values.put("formatting", "[]");
+        values.put("created_at", now);
+        values.put("updated_at", now);
+        values.put("word_count", TextStats.wordCount(content));
+        values.put("character_count", TextStats.charCount(content));
+        values.put("is_favorite", favorite ? 1 : 0);
+        values.put("is_pinned", pinned ? 1 : 0);
+        values.put("note_type", "NOTE");
+        return db.insertOrThrow("notes", null, values);
+    }
+
+    private long insertSampleTodo(SQLiteDatabase db, String title, String description, long now) {
+        ContentValues values = new ContentValues();
+        values.put("title", title);
+        values.put("description", description);
+        values.put("status", "PENDING");
+        values.put("created_at", now);
+        return db.insertOrThrow("todos", null, values);
+    }
+
+    private long findTagId(SQLiteDatabase db, String name) {
+        try (Cursor cursor = db.rawQuery("SELECT id FROM tags WHERE name = ?", new String[]{name})) {
+            return cursor.moveToFirst() ? cursor.getLong(0) : -1;
+        }
+    }
+
+    private void linkNoteToTag(SQLiteDatabase db, long noteId, long tagId) {
+        if (tagId < 0) return;
+        ContentValues values = new ContentValues();
+        values.put("note_id", noteId);
+        values.put("tag_id", tagId);
+        db.insertOrThrow("note_tags", null, values);
+    }
+
+    private void linkTodoToTag(SQLiteDatabase db, long todoId, long tagId) {
+        if (tagId < 0) return;
+        ContentValues values = new ContentValues();
+        values.put("todo_id", todoId);
+        values.put("tag_id", tagId);
+        db.insertOrThrow("todo_tags", null, values);
+    }
+
     /**
      * Safe, incremental migrations: data is preserved and each step only runs once.
      * Add a new "case" for every future schema version.
@@ -157,9 +242,11 @@ public class NotepadDatabase extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         for (int version = oldVersion; version < newVersion; version++) {
             switch (version) {
-                // case 1: // migrate 1 -> 2
-                //     db.execSQL("ALTER TABLE notes ADD COLUMN ...");
-                //     break;
+                case 1:
+                    if (seedSampleData) {
+                        seedSampleRecords(db);
+                    }
+                    break;
                 default:
                     break;
             }
